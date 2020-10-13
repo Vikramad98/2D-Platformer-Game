@@ -1,0 +1,194 @@
+﻿/*using System.Collections;
+using System.Collections.Generic;*/
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using TMPro;
+public class PlayerController : MonoBehaviour
+{
+    // Start is called before the first frame update
+
+    public TextMeshProUGUI ScoreText;
+    private int score=0;
+    public Animator animator;
+    BoxCollider2D Collider;
+
+    [Range(0.0f,10.0f)]
+    public float speed=3.0f;
+    public float Jump = 600f;
+    public int Health = 1;
+
+    public LayerMask whatIsGround;
+    public Transform GroundCheck;
+
+    [HideInInspector]
+    public bool PlayerCanMove = true;
+
+    //private variables below
+
+    Transform _transform;
+    Rigidbody2D _rigidbody;
+    Animator _animator;
+
+    float _vx;
+    float _vy;
+
+    //Tracking
+    bool _facingRignt = true;
+    bool _isGrounded = false;
+    bool _isRunning = false;
+
+    int _PlayerLayer;
+    int _PlatformLayer;
+
+    
+
+
+    public void PickUpKey()
+    {
+        score=score+10;
+        ScoreText.text = "Score : "+score.ToString("");
+        Debug.Log("Key Collected");
+    }
+    
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.CompareTag("Die"))
+        {
+            //_animator.SetTrigger("Death");
+            SceneManager.LoadScene("1");
+        }
+    }
+    void Awake()
+    {
+        //_animator.SetBool("Grounded", true);
+        Collider = GetComponent<BoxCollider2D>();
+
+        _transform = GetComponent<Transform>();
+
+        _rigidbody = GetComponent<Rigidbody2D>();
+
+        _animator = GetComponent<Animator>();
+
+        if(_rigidbody == null)
+        {
+            Debug.LogError("Rigidbody2D component missing From the gameobject");
+        }
+        if (_animator == null)
+        {
+            Debug.LogError("animator component missing From the gameobject");
+
+            _animator = gameObject.AddComponent<Animator>();
+
+        }
+        _PlayerLayer = this.gameObject.layer;
+        _PlatformLayer = LayerMask.NameToLayer("Platform");
+    }
+    private void Start()
+    {
+       
+
+    }
+    // Update is called once per frame
+    void Update()
+    {
+        if (!PlayerCanMove || Time.timeScale == 0)
+            return;
+
+
+        _vx = Input.GetAxisRaw("Horizontal");
+
+        //float vertical = Input.GetAxisRaw("Jump");
+
+        if (_vx != 0)
+        {
+            _isRunning = true;
+
+        }
+        else
+        {
+            _isRunning = false;
+        }
+        _animator.SetBool("Running", _isRunning);
+
+
+        _vy = _rigidbody.velocity.y;
+
+        _isGrounded = Physics2D.Linecast(_transform.position, GroundCheck.position, whatIsGround);
+
+        _animator.SetBool("Grounded", _isGrounded);
+
+        if (_isGrounded && Input.GetKeyDown(KeyCode.Space))
+        {
+            _rigidbody.AddForce(new Vector2(0f, Jump));
+            _vy = 0;
+            
+            
+        }
+
+        if (Input.GetKeyUp(KeyCode.Space) && _vy > 0f)
+        {
+            _vy = 0;
+        }
+
+        _rigidbody.velocity = new Vector2(_vx * speed, _vy);
+
+        Physics2D.IgnoreLayerCollision(_PlayerLayer,_PlatformLayer,(_vy>0.0f));
+
+        //PlayerMovementHorizontal();
+        //MoveCharacter(_vx);
+
+        if (Input.GetKey(KeyCode.LeftControl))
+        {
+            animator.SetBool("IsCrouch", true);
+            Collider.offset = new Vector2(-0.013f, 0.64f);
+            Collider.size = new Vector2(0.95f, 1.33f);
+
+        }
+        else if (Input.GetKeyUp(KeyCode.LeftControl))
+        {
+            animator.SetBool("IsCrouch", false);
+            Collider.offset = new Vector2(0.013f, 0.983f);
+            Collider.size = new Vector3(1.6f, 2.1f);
+        }       
+        
+    }
+
+
+    private void LateUpdate()
+    {
+        Vector3 localScale = transform.localScale;
+        if (_vx > 0)
+        {
+            _facingRignt = true;
+        }
+        else if (_vx < 0)
+        {
+            _facingRignt = false;
+        }
+
+        if((_facingRignt)&&(localScale.x<0)||(!_facingRignt) && (localScale.x > 0)){
+            localScale.x *= -1;
+        }
+
+
+        transform.localScale = localScale;
+    }
+   /* private void MoveCharacter(float _vx)
+    {
+        
+        Vector2 pos = transform.position;
+        pos.x +=  _vx * speed * Time.deltaTime;
+        
+        transform.position = pos;
+        
+        *//*if (vertical > 0 &&vertical<=1)
+        {
+            
+        }*//*
+    }*/
+
+   
+}
+
+
